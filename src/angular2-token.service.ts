@@ -365,7 +365,6 @@ export class Angular2TokenService implements CanActivate {
     // Construct and send Http request
     request(options: RequestOptionsArgs): Observable<Response> {
 
-        let baseRequestOptions: RequestOptions;
         let baseHeaders:        { [key:string]: string; } = this.atOptions.globalOptions.headers;
 
         // Merge auth headers to request if set
@@ -379,27 +378,24 @@ export class Angular2TokenService implements CanActivate {
             });
         }
 
-        baseRequestOptions = new RequestOptions({
-            headers: new Headers(baseHeaders)
-        });
+        options.headers = options.headers || new Headers();
 
         // Merge standard and custom RequestOptions
-        baseRequestOptions = baseRequestOptions.merge(options);
+        Object.keys(baseHeaders).forEach(function(name){
+            options.headers.set(name, baseHeaders[name]);
+        });
 
-        let response = this.http.request(new Request(baseRequestOptions)).share();
+        let response = this.http.request(new Request(new RequestOptions(options))).share();
         this.handleResponse(response);
 
         return response;
     }
 
     private mergeRequestOptionsArgs(options: RequestOptionsArgs, addOptions?: RequestOptionsArgs): RequestOptionsArgs {
-
         let returnOptions: RequestOptionsArgs = options;
-
-        if (options)
-            (<any>Object).assign(returnOptions, addOptions);
-
-        return returnOptions;
+        if (addOptions)
+            (<any>Object).assign(addOptions, returnOptions);
+        return addOptions || returnOptions;
     }
 
     // Check if response is complete and newer, then update storage
